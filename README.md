@@ -13,4 +13,4 @@ Questions to answer:
 Files are organized in 3 sub-folders:
 * /data/ contains all relevant data for further analysis
 * /processing/ for R code to produce clean subsets of data
-* /notebook/ for production-ready R Markdown files
+* /notebook/ for production-ready R Markdown files (two sub-folders: sub-scales and Yscore)

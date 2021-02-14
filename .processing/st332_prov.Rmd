@@ -8,11 +8,11 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, include=FALSE)
+knitr::opts_chunk$set(echo=FALSE)
 ```
 
-```{r } 
-library(knitr) 
+```{r , echo=FALSE, message=FALSE} 
+library(knitr) #wanna use template here
 library(finalfit)
 library(naniar)
 library(visdat)
@@ -25,35 +25,31 @@ library(MASS)
 library(fitdistrplus)
 library(logspline)
 library(mice)
-library
 ```
 
-```{r }
-ff_glimpse #to ensure data is coded correctly and data entry is robust
-missing_plot 
-missing_pattern #include this data in demographic tables
-missing_pairs
-missing_compare
+## Intro
 
-```
+
+## Data Collection
+This report uses data collected in the CAST study (detailed by Lamb et.al., 2009) on 585 patients with ankle sprains. The study analyses different treatments comparatively, with the aim of making clinical recommendations. Encompassing 238 females and 347 males of ages 16-72, the dataset contains variables describing the age, weight, sex and height of each participant, as well as five health scores, which are components of the Foot and Ankle Outcome Score in the initial paper.
 
 ```{r import}
 cast <- read.csv("CAST2miss.csv")
 cast <-as.data.frame(cast)
 ```
-```{r summ}
+```{r summ, echo=TRUE, output=TRUE}
 summary(cast)
 ```
 
 
 ## Data entry check
 The dataset used in the subsequent analysis is imported from a medical trial. We want to find out if the data entry process is robust by checking for variable type (coding) and looking at a summary table of the data.
-```{r }
+```{r , echo=TRUE, output=TRUE}
 ff_glimpse(cast)
 ```
 It seems that the CAST dataset encompasses categorical variables and continuous variables. Sex is coded as integer despite being a factor, while the baseline sports variable is also coded as an integer, despite being a continuous variable. We convert sex into a factor with two levels, 0 (female) and 1 (male), and the baseline sports sub-scale into a continuous variable.
 
-```{r , echo=FALSE}
+```{r ,include=FALSE}
 castsp <- cast[, c(1:4,8,13)]
 castsp %>% mutate(sex=sex-1)
 castsp$sex <- as.factor(castsp$sex)
@@ -65,7 +61,7 @@ The four basic variables (age, sex, height, weight) are recorded for all patient
 ## General plots 
   
 We begin with some exploratory plots to visualize missingness in the dataset.
-```{r }
+```{r missing viz, output=TRUE, echo=TRUE}
 gg_miss_var(cast,show_pct=TRUE)
 
 vis_miss(cast)
@@ -84,7 +80,7 @@ From the figures above, it is noteworthy that missingness is most prevalent amon
 
 The function in sport and recreation variables (bsport, sport9) are missing 2.12% and 38.58% of the time. From Fig 1, it is clear that all 11 variables in question have some degree of missingness so we change the default settings of the visualization function to account for all interactions between all the missing variables (nintersects=NA).
 
-```{r }
+```{r , output=TRUE, echo=TRUE}
 gg_miss_upset(cast, nsets=16,nintersects=NA)
 ```
 
@@ -103,9 +99,16 @@ md.pattern(cast)
 ## Sports & recreation variable
 
 Let's explore a summary of the CAST data with the basic variables and the sports sub-scale.
+
+
+
 ```{r }
 md.pattern(castsp)
 ```
+
+
+
+
 There are 304 full observations, 209 observations which are only missing the value at the 9-month time point and 3 observations which are missing the baseline value. The remaining 9 observations are missing both values. The former two categories will be of particular interest to the following analysis.
 
 Let's now look at a plot showing the relationship between the prevalence of the sports variable at the two time points- baseline and 9 months.
@@ -117,6 +120,7 @@ ggplot(cast,
  geom_miss_point()
 ```
 
+
 Let's explore the missingness relationship between baseline and 9-month measurements of the sports sub-scale, dependent on sex.
 
 ```{r }
@@ -125,10 +129,17 @@ ggplot(cast,
            y = sport9))+ geom_miss_point()+facet_wrap(~sex)
 ```
 
+
+
+
 Let's look at a plot showing the missingness of the CAST dataset variables by sex.
+
+
+
 ```{r }
 gg_miss_fct(x = cast, fct = sex)
 ```
+
 There seems to be a distinct correlation between missingness of sub-scale values (9-month measurement) and sex, with scores for females missing more sparsely than those for males. At baseline, there does not seem to be a significant difference in willingness to complete the survey between sexes.
 
 
@@ -263,7 +274,14 @@ r[["p.value"]]
 r[["missing patterns"]]
 r[["amount.missing"]]
 ```
+
+
+
+
 The output of Little's MCAR test indicates that no variables are MCAR.
+
+
+
 ```{r pairs, message=FALSE, warning=FALSE}
 explanatory = c("age", "sex", 
   "height", "weight",  
@@ -307,7 +325,7 @@ castsp <- castsp %>%
     )
 ```
 
-```{r mice, echo=FALSE, output=FALSE}
+```{r mice design, include=FALSE}
 castsp_m1 <- mice(castsp,m=5,maxit=50,meth='pmm')
 ```
 ```{r mice, output=FALSE, echo=FALSE}
@@ -327,19 +345,25 @@ After concluding that sport9 is at least MAR, let's test whether it can be MNAR.
 
 ## Modelling missingness
 
-
-
-
 We will use covariance analysis adjusted for age, sex, height and the appropriate baseline variable to establish the size and statistical significance of clinical differences at the 9-month timepoint.
 
-## Modelling the sub-scale sport variable
+## Modelling sport9 variable
 
 ```{r }
-#descdist(cast$sport9) #because of NA values
+descdist(castsp$sport9na) 
 ``` 
 
+
+The Cullen-Frey graph for sport9 indicates that its distribution resembles the uniform and Beta distributions.
+
+
+
 ## Limitations
-* List-wise deletion of the observations in which bsport is missing introduces a bias in the inferences. There is a weak relationship between bsport and age, which means that list-wise deletion implies keeping the observations from younger people, on average. This may have consequences for our conclusions if age is associated with sport9.
+* (bsport) List-wise deletion of the observations in which bsport is missing introduces a bias in the inferences. There is a weak relationship between bsport and age, which means that list-wise deletion implies keeping the observations from younger people, on average. This may have consequences for our conclusions if age is associated with sport9.
+
+* (Yscore) List-wise deletion of observations leads to a bigger drop in male than female participants (as the score is proportionately missing), which might affect the inferences
+
+* (reducing to no na's) Reduction of the dataset to participants with no missing data introduces a higher bias in the results. Apart from subsetting participants with no missing observations for the baseline scores, which account for a fairly small percentage of the dataset (approx. 12%), we would also drop all participants with at least one missing sub-scale, which account for 40% of the dataset. 
 
 ## References
 

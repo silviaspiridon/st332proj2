@@ -475,7 +475,12 @@ modely1<-glm(yscore_miss_NA~bsport+age,data=cast,family="binomial")
 tidy(modely1)
 ```
 
-
+```{r }
+casty <- read.csv("CAST2miss.csv")
+casty <-as.data.frame(casty)
+cast_Y <- casty[,c(1:9,15)]
+cast_Y <- na.omit(cast_Y)
+```
 
 
 ## Limitations
